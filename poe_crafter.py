@@ -7,7 +7,7 @@ import re
 import keyboard
 
 # --- VERSION CONTROL ---
-APP_VERSION = "v1.27 (Exe)"
+APP_VERSION = "v1.28 (Exe)"
 APP_TITLE = f"PoE 2 Auto Crafter {APP_VERSION}"
 
 # Theme Setup
@@ -34,7 +34,7 @@ class PoEBotText(ctk.CTk):
         self.frame_header = ctk.CTkFrame(self, fg_color="transparent")
         self.frame_header.pack(pady=(20, 10))
         
-        self.lbl_title = ctk.CTkLabel(self.frame_header, text="RNG Chaos Roll by Yuki.xyz", font=("Roboto", 28, "bold"))
+        self.lbl_title = ctk.CTkLabel(self.frame_header, text="RNG Chaos Roll by Yuki", font=("Roboto", 28, "bold"))
         self.lbl_title.pack()
         
         self.lbl_subtitle = ctk.CTkLabel(self.frame_header, text="Press 'X' to STOP", text_color="orange", font=("Arial", 14))
@@ -140,7 +140,22 @@ class PoEBotText(ctk.CTk):
         return requirements
 
     def check_item_match(self, item_data, requirements):
-        clean_data = item_data.replace(',', '')
+        # --- เพิ่มใหม่: แยกส่วน Implicit ออกจาก Explicit ---
+        # แยกข้อความด้วยเส้นปะ
+        parts = item_data.split('--------')
+        
+        # เลือกเอาเฉพาะส่วนสุดท้าย (Mod ที่เราสุ่มจะอยู่ล่างสุดเสมอ)
+        # ถ้า Item มี Mod 4-5 บรรทัด มันจะกองรวมกันอยู่ใน parts[-1]
+        if len(parts) > 1:
+            check_content = parts[-1] 
+        else:
+            check_content = item_data # กันเหนียวเผื่อตัดไม่ได้
+        
+        # -----------------------------------------------
+
+        # เปลี่ยนจาก item_data เป็น check_content
+        clean_data = check_content.replace(',', '') 
+        
         for req in requirements:
             match = re.search(req["pattern"], clean_data)
             if match:

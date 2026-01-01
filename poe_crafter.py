@@ -7,7 +7,7 @@ import re
 import keyboard
 
 # --- VERSION CONTROL ---
-APP_VERSION = "v1.28 (Exe)"
+APP_VERSION = "v1.29 (Exe)"
 APP_TITLE = f"PoE 2 Auto Crafter {APP_VERSION}"
 
 # Theme Setup
@@ -140,33 +140,61 @@ class PoEBotText(ctk.CTk):
         return requirements
 
     def check_item_match(self, item_data, requirements):
-        # --- เพิ่มใหม่: แยกส่วน Implicit ออกจาก Explicit ---
-        # แยกข้อความด้วยเส้นปะ
-        parts = item_data.split('--------')
+        # 1. ตัดแบ่งส่วนด้วยเส้นปะ (ขีด 4 ตัวขึ้นไป)
+        parts = re.split(r'-{4,}', item_data)
         
-        # เลือกเอาเฉพาะส่วนสุดท้าย (Mod ที่เราสุ่มจะอยู่ล่างสุดเสมอ)
-        # ถ้า Item มี Mod 4-5 บรรทัด มันจะกองรวมกันอยู่ใน parts[-1]
-        if len(parts) > 1:
-            check_content = parts[-1] 
-        else:
-            check_content = item_data # กันเหนียวเผื่อตัดไม่ได้
+        # 2. หา "ก้อน Explicit" ที่แท้จริง (ไล่เช็คจากล่างขึ้นบน)
+        check_content = ""
         
-        # -----------------------------------------------
+        # ลูปย้อนกลับจากก้อนสุดท้ายขึ้นไปหาก้อนแรก
+        for part in reversed(parts):
+            part = part.strip()
+            
+            # --- จุดกรองขยะ ---
+            # ถ้าเจอก้อนที่เป็นคำบอกสถานะพวกนี้ ให้ข้ามไปเลย (ตัวการคือ Fractured Item นี่แหละ)
+            if part in ["Fractured Item", "Corrupted", "Mirrored", "Split", "Synthesised Item"]:
+                continue
+            
+            # ถ้าข้ามมาจนเจอ Header (Level, Requires) แปลว่าเลยเถิดแล้ว (หยุดทันที)
+            if "Item Level:" in part or "Requires:" in part or "Rarity:" in part:
+                continue
 
-        # เปลี่ยนจาก item_data เป็น check_content
-        clean_data = check_content.replace(',', '') 
+            # ถ้าหลุดรอดมาได้ และมีข้อความ แปลว่าเจอก้อน Mod ที่แท้จริงแล้ว!
+            if part:
+                check_content = part
+                break
         
+        # กันเหนียว: ถ้าหาไม่เจอจริงๆ ให้ใช้ก้อนสุดท้ายเหมือนเดิม
+        if not check_content and len(parts) > 0:
+            check_content = parts[-1]
+
+        # [DEBUG] ปริ้นท์ดูซิว่ารอบนี้หยิบถูกไหม (ต้องได้ +3 Level กับ +90 Life)
+        print(f"--- READING BLOCK ---\n{check_content}\n---------------------")
+
+        clean_data = check_content.replace(',', '')
+        
+        # --- ลูปเช็คเงื่อนไข ---
         for req in requirements:
-            match = re.search(req["pattern"], clean_data)
+            # ใช้ IGNORECASE กันพิมพ์เล็กพิมพ์ใหญ่
+            match = re.search(req["pattern"], clean_data, re.IGNORECASE)
+            
             if match:
                 game_values = [int(v) for v in match.groups()]
+                
+                # เช็คจำนวนตัวเลข
                 if len(game_values) == len(req["min_values"]):
                     all_pass = True
+                    # เช็คค่าต่ำสุด
                     for g_val, m_val in zip(game_values, req["min_values"]):
                         if g_val < m_val:
                             all_pass = False
                             break
-                    if all_pass: return True
+                    
+                    # ถ้าผ่านเงื่อนไขใดเงื่อนไขหนึ่ง (OR Logic) ให้ผ่านเลย
+                    if all_pass: 
+                        print(f"MATCHED Requirement: {req['original_text']}")
+                        return True
+                        
         return False
 
     def start_bot(self):

@@ -1,4 +1,4 @@
-# PoE 2 Auto Crafter (v1.28)
+# PoE 2 Auto Crafter (v1.29)
 
 A Chaos Spam crafting tool designed for **Path of Exile 2**, built with Python. Focused on speed, precision, and stability.
 

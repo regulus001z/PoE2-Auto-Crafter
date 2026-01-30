@@ -1,14 +1,16 @@
-# PoE 2 Auto Crafter (v1.29)
+# PoE 2 Auto Crafter (v1.30)
 
 A Chaos Spam crafting tool designed for **Path of Exile 2**, built with Python. Focused on speed, precision, and stability.
 
 ![PoE2 Crafter](https://img.shields.io/badge/Status-Stable-green) ![Platform](https://img.shields.io/badge/Platform-Windows-blue)
 
-## ✨ Features
+## ✨ Features in v1.30
 
+* **🛡️ Smart Filtering:** Automatically ignores **Fractured** and **Implicit** mods. The bot will no longer stop prematurely on existing mods; it only checks for *new* rolls.
+* **⚡ Stable Logic:** Uses a **Continuous Shift-Hold** method with optimized timing (0.08s) to ensure smooth operation without missing inputs.
+* **abc Text Mod Support:** Now supports **Text-Only** mods (e.g., *"Upgrades Radius to Large"*) in addition to numerical values.
 * **Smart Parsing:** Supports copying Mod text directly from **[poe2db.tw](https://poe2db.tw/)** (Handles all dash types: -, –, —).
 * **Emergency Stop:** Stop operations immediately by pressing the **`X`** key.
-* **User Friendly:** Easy-to-use GUI, specifically tuned for PoE players.
 
 ## 📥 Installation
 
@@ -22,7 +24,7 @@ A Chaos Spam crafting tool designed for **Path of Exile 2**, built with Python. 
 
 1.  **Prepare Mods:**
     * Go to [poe2db](https://poe2db.tw/), copy the desired mods, and paste them into the program.
-    * *Tip: The bot detects the "First Number" it finds in a line as the minimum requirement.*
+    * *Tip: You can mix number mods and text mods.*
 
 2.  **Set Coordinates:**
     * Click **`1. Set Chaos`** -> Hover your mouse over the Chaos Orb stack in-game (**Wait 2 seconds**).
@@ -36,8 +38,9 @@ A Chaos Spam crafting tool designed for **Path of Exile 2**, built with Python. 
 
 ### Input Example
 
-You can paste data like this directly into the program:
+You can paste data like this directly into the program (Supports both numbers and text):
 
 ```text
 Adds (20–30) to (40–50) Physical Damage
 (170–179)% increased Physical Damage
+Upgrades Radius to Large

@@ -7,7 +7,7 @@ import re
 import keyboard
 
 # --- VERSION CONTROL ---
-APP_VERSION = "v1.29 (Exe)"
+APP_VERSION = "v1.30 (FIXED)"
 APP_TITLE = f"PoE 2 Auto Crafter {APP_VERSION}"
 
 # Theme Setup
@@ -28,9 +28,7 @@ class PoEBotText(ctk.CTk):
         self.item_pos = None
         self.is_running = False
 
-        # --- UI LAYOUT (คงเดิมตามที่คุณขอ) ---
-        
-        # 1. Header Section
+        # --- UI LAYOUT (คงเดิม) ---
         self.frame_header = ctk.CTkFrame(self, fg_color="transparent")
         self.frame_header.pack(pady=(20, 10))
         
@@ -40,12 +38,11 @@ class PoEBotText(ctk.CTk):
         self.lbl_subtitle = ctk.CTkLabel(self.frame_header, text="Press 'X' to STOP", text_color="orange", font=("Arial", 14))
         self.lbl_subtitle.pack()
 
-        # 2. Coordinates Section (Grid Layout)
+        # Coordinates Section
         self.frame_coords = ctk.CTkFrame(self)
         self.frame_coords.pack(pady=10, padx=20, fill="x")
         self.frame_coords.grid_columnconfigure((0, 1), weight=1)
 
-        # Chaos Button & Label
         self.btn_set_chaos = ctk.CTkButton(self.frame_coords, text="1. Set Chaos", command=self.set_chaos_action, 
                                          font=("Arial", 14, "bold"), height=40, fg_color="#D4AF37", hover_color="#B8860B", text_color="black")
         self.btn_set_chaos.grid(row=0, column=0, padx=10, pady=(15, 5), sticky="ew")
@@ -53,7 +50,6 @@ class PoEBotText(ctk.CTk):
         self.lbl_chaos_status = ctk.CTkLabel(self.frame_coords, text="Not Set", text_color="red", font=("Arial", 12))
         self.lbl_chaos_status.grid(row=1, column=0, padx=10, pady=(0, 15))
 
-        # Item Button & Label
         self.btn_set_item = ctk.CTkButton(self.frame_coords, text="2. Set Item", command=self.set_item_action, 
                                         font=("Arial", 14, "bold"), height=40, fg_color="#4682B4", hover_color="#36648B")
         self.btn_set_item.grid(row=0, column=1, padx=10, pady=(15, 5), sticky="ew")
@@ -61,18 +57,13 @@ class PoEBotText(ctk.CTk):
         self.lbl_item_status = ctk.CTkLabel(self.frame_coords, text="Not Set", text_color="red", font=("Arial", 12))
         self.lbl_item_status.grid(row=1, column=1, padx=10, pady=(0, 15))
 
-        # 3. Input Section
-        self.lbl_instruct = ctk.CTkLabel(self, text="Paste mods here (poe2db supported).", text_color="silver", font=("Arial", 12))
+        self.lbl_instruct = ctk.CTkLabel(self, text="Paste mods here (Supports Text & Numbers)", text_color="silver", font=("Arial", 12))
         self.lbl_instruct.pack(pady=(10, 5))
         
         self.textbox = ctk.CTkTextbox(self, width=460, height=220, font=("Consolas", 14), border_width=2, corner_radius=10)
         self.textbox.pack(pady=5, padx=20)
-        
-        # Default Text (ค่าเดิม)
-        default_text = """"""
-        self.textbox.insert("0.0", default_text)
+        self.textbox.insert("0.0", "")
 
-        # 4. Status & Control Section
         self.frame_controls = ctk.CTkFrame(self, fg_color="transparent")
         self.frame_controls.pack(pady=20, padx=20, fill="x")
 
@@ -88,8 +79,6 @@ class PoEBotText(ctk.CTk):
         self.btn_stop.pack(fill="x", pady=5)
 
         self.protocol("WM_DELETE_WINDOW", self.on_close)
-        
-        # Hotkey listener
         self.check_hotkey()
 
     def check_hotkey(self):
@@ -118,82 +107,54 @@ class PoEBotText(ctk.CTk):
         
         for line in lines:
             line = line.strip()
-            if not line or not re.search(r'\d', line): continue
+            if not line: continue
 
-            try:
-                token_pattern = r'\(?(\d+)(?:-\d+)?\)?'
-                min_values = []
-                tokens = re.findall(token_pattern, line)
-                if not tokens: continue
-                for t in tokens: min_values.append(int(t))
-                
-                parts = re.split(r'\(?\d+(?:-\d+)?\)?', line)
-                regex_pattern = ""
-                for i, part in enumerate(parts):
-                    regex_pattern += re.escape(part)
-                    if i < len(parts) - 1:
-                        regex_pattern += r"([\d,]+)"
-                
-                regex_pattern = regex_pattern.replace(r'\ ', r'\s+')
-                requirements.append({"pattern": regex_pattern, "min_values": min_values, "original_text": line})
-            except: pass
+ 
+            if not re.search(r'\d', line):
+                regex = re.escape(line).replace(r'\ ', r'\s+')
+                requirements.append({"pattern": regex, "min_values": [], "original_text": line, "type": "text"})
+            else:
+                try:
+                    token_pattern = r'\(?(\d+)(?:-\d+)?\)?'
+                    min_values = [int(t) for t in re.findall(token_pattern, line)]
+                    
+                    parts = re.split(r'\(?\d+(?:-\d+)?\)?', line)
+                    regex = "".join([re.escape(p) + (r"([\d,]+)" if i < len(parts)-1 else "") for i, p in enumerate(parts)])
+                    regex = regex.replace(r'\ ', r'\s+')
+                    
+                    requirements.append({"pattern": regex, "min_values": min_values, "original_text": line, "type": "number"})
+                except: pass
         return requirements
 
     def check_item_match(self, item_data, requirements):
-        # 1. ตัดแบ่งส่วนด้วยเส้นปะ (ขีด 4 ตัวขึ้นไป)
-        parts = re.split(r'-{4,}', item_data)
-        
-        # 2. หา "ก้อน Explicit" ที่แท้จริง (ไล่เช็คจากล่างขึ้นบน)
-        check_content = ""
-        
-        # ลูปย้อนกลับจากก้อนสุดท้ายขึ้นไปหาก้อนแรก
-        for part in reversed(parts):
-            part = part.strip()
-            
-            # --- จุดกรองขยะ ---
-            # ถ้าเจอก้อนที่เป็นคำบอกสถานะพวกนี้ ให้ข้ามไปเลย (ตัวการคือ Fractured Item นี่แหละ)
-            if part in ["Fractured Item", "Corrupted", "Mirrored", "Split", "Synthesised Item"]:
-                continue
-            
-            # ถ้าข้ามมาจนเจอ Header (Level, Requires) แปลว่าเลยเถิดแล้ว (หยุดทันที)
-            if "Item Level:" in part or "Requires:" in part or "Rarity:" in part:
-                continue
 
-            # ถ้าหลุดรอดมาได้ และมีข้อความ แปลว่าเจอก้อน Mod ที่แท้จริงแล้ว!
-            if part:
-                check_content = part
-                break
-        
-        # กันเหนียว: ถ้าหาไม่เจอจริงๆ ให้ใช้ก้อนสุดท้ายเหมือนเดิม
-        if not check_content and len(parts) > 0:
-            check_content = parts[-1]
+        clean_data = item_data.lower()
 
-        # [DEBUG] ปริ้นท์ดูซิว่ารอบนี้หยิบถูกไหม (ต้องได้ +3 Level กับ +90 Life)
-        print(f"--- READING BLOCK ---\n{check_content}\n---------------------")
+        clean_data = re.sub(r'.*\(fractured\).*', '', clean_data)
 
-        clean_data = check_content.replace(',', '')
-        
-        # --- ลูปเช็คเงื่อนไข ---
+
+        clean_data = re.sub(r'.*\(implicit\).*', '', clean_data)
+
+        clean_data = clean_data.replace(',', '')
+
+        print(f"--- BOT SEES (Cleaned) ---\n{clean_data}\n--------------------------")
+
         for req in requirements:
-            # ใช้ IGNORECASE กันพิมพ์เล็กพิมพ์ใหญ่
-            match = re.search(req["pattern"], clean_data, re.IGNORECASE)
+            matches = re.finditer(req["pattern"], clean_data, re.IGNORECASE)
             
-            if match:
-                game_values = [int(v) for v in match.groups()]
+            for match in matches:
+
+                if req.get("type") == "text":
+                    print(f"🎉 MATCH FOUND (Text)! {req['original_text']}")
+                    return True
                 
-                # เช็คจำนวนตัวเลข
-                if len(game_values) == len(req["min_values"]):
-                    all_pass = True
-                    # เช็คค่าต่ำสุด
-                    for g_val, m_val in zip(game_values, req["min_values"]):
-                        if g_val < m_val:
-                            all_pass = False
-                            break
-                    
-                    # ถ้าผ่านเงื่อนไขใดเงื่อนไขหนึ่ง (OR Logic) ให้ผ่านเลย
-                    if all_pass: 
-                        print(f"MATCHED Requirement: {req['original_text']}")
-                        return True
+
+                else:
+                    game_values = [int(v) for v in match.groups()]
+                    if len(game_values) == len(req["min_values"]):
+                        if all(g >= m for g, m in zip(game_values, req["min_values"])):
+                            print(f"🎉 MATCH FOUND! {req['original_text']} -> {game_values}")
+                            return True
                         
         return False
 
@@ -212,7 +173,7 @@ class PoEBotText(ctk.CTk):
         self.is_running = True
         self.btn_start.configure(state="disabled")
         self.btn_stop.configure(state="normal")
-        self.lbl_log.configure(text="Running... (Exe Replica)", text_color="cyan")
+        self.lbl_log.configure(text="Running... (v1.29 Rhythm)", text_color="cyan")
         
         threading.Thread(target=self.run_process).start()
 
@@ -223,13 +184,12 @@ class PoEBotText(ctk.CTk):
         self.btn_start.configure(state="normal")
         self.btn_stop.configure(state="disabled")
         
-        # Force Release Shift (Hardware level)
+        # ปล่อย Shift แบบเดิม
         keyboard.release('shift')
 
     def force_stop(self):
         self.stop_bot()
 
-    # --- LOGIC: Exe Replica (Continuous Hold) ---
     def run_process(self):
         # 1. Pickup Currency
         self.lbl_log.configure(text="Picking up Currency...", text_color="orange")
@@ -242,46 +202,43 @@ class PoEBotText(ctk.CTk):
         pyautogui.moveTo(self.item_pos)
         time.sleep(0.2)
 
-        self.lbl_log.configure(text=">>> ROLLING (Exe Logic) <<<", text_color="#00FF00")
+        self.lbl_log.configure(text=">>> ROLLING (v1.29) <<<", text_color="#00FF00")
 
-        # 3. Hold Shift ONCE (Like the .exe does)
-        # ใช้ keyboard.press แทน pyautogui เพื่อความแน่นเหมือน .exe
         keyboard.press('shift')
         time.sleep(0.2) 
 
         while self.is_running:
             if keyboard.is_pressed('x'): self.stop_bot(); break
 
-            # === CLICK ===
-            # คลิกแบบไม่ต้องปล่อยปุ่ม Shift (เพราะเรากดค้างไว้ระดับ Hardware แล้ว)
             pyautogui.click()
             
-            # Wait for Server (Exe มี delay นิดหน่อยกันหลุด)
+
             time.sleep(0.06)
 
             if keyboard.is_pressed('x'): self.stop_bot(); break
 
             # === COPY ===
-            # Exe จะเคลียร์ clipboard ก่อนเสมอ
-            pyperclip.copy("") 
+            pyperclip.copy("")
             pyautogui.hotkey('ctrl', 'c')
-            
-            # Wait Clipboard
+
             data = ""
-            for _ in range(8): 
+            for _ in range(8):
                 if keyboard.is_pressed('x'): self.stop_bot(); break
                 data = pyperclip.paste()
                 if data: break
                 time.sleep(0.01)
 
-            # === CHECK ===
+            if not data:
+                time.sleep(0.05)
+                continue
+
             if self.check_item_match(data, self.requirements):
                 self.lbl_log.configure(text="CRAFT SUCCESS!", text_color="#00FF00")
                 keyboard.release('shift')
                 self.stop_bot()
                 break
             
-            # Loop delay (Exe มีความหน่วงนิดเดียวเพื่อให้ CPU ไม่พีค)
+            # Loop delay (พักนิดเดียว)
             time.sleep(0.02)
 
     def on_close(self):

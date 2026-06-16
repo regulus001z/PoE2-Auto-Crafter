@@ -1,16 +1,16 @@
-# PoE 2 Auto Crafter (v1.30)
+# PoE 2 Auto Crafter (v1.31)
 
-A Chaos Spam crafting tool designed for **Path of Exile 2**, built with Python. Focused on speed, precision, and stability.
+A Chaos/Alteration Spam crafting tool designed for **Path of Exile 2**, built with Python. Focused on speed, precision, and stability.
 
 ![PoE2 Crafter](https://img.shields.io/badge/Status-Stable-green) ![Platform](https://img.shields.io/badge/Platform-Windows-blue)
 
-## ✨ Features in v1.30
+## ✨ What's New in v1.31 (Regex & Parsing Overhaul)
 
-* **🛡️ Smart Filtering:** Automatically ignores **Fractured** and **Implicit** mods. The bot will no longer stop prematurely on existing mods; it only checks for *new* rolls.
-* **⚡ Stable Logic:** Uses a **Continuous Shift-Hold** method with optimized timing (0.08s) to ensure smooth operation without missing inputs.
-* **abc Text Mod Support:** Now supports **Text-Only** mods (e.g., *"Upgrades Radius to Large"*) in addition to numerical values.
-* **Smart Parsing:** Supports copying Mod text directly from **[poe2db.tw](https://poe2db.tw/)** (Handles all dash types: -, –, —).
-* **Emergency Stop:** Stop operations immediately by pressing the **`X`** key.
+* **🧹 Ultimate Bracket Cleaner:** The bot now automatically strips all brackets `(...)` and `{...}` from both the game's clipboard and your input text. It flawlessly handles PoE2's Advanced Mod descriptions and trade site formats.
+* **🎯 True Minimum Value Targeting:** Set your exact minimum required roll (e.g., `47 to Spirit`), and the bot will stop only when it hits that number or higher.
+* **🛡️ Smart Filtering:** Automatically ignores **Fractured**, **Implicit**, and flavor texts. It only checks for *new* rolls.
+* **⚡ Stable Logic:** Uses a **Continuous Shift-Hold** method with optimized timing to ensure smooth operation without missing inputs. Works beautifully with extremely fast currencies like Orbs of Alteration.
+* **🛑 Emergency Stop:** Stop operations immediately by pressing the **`X`** key.
 
 ## 📥 Installation
 
@@ -23,11 +23,11 @@ A Chaos Spam crafting tool designed for **Path of Exile 2**, built with Python. 
 **⚠️ IMPORTANT:** Always right-click the program and select **"Run as administrator"** (Required for mouse/keyboard control).
 
 1.  **Prepare Mods:**
-    * Go to [poe2db](https://poe2db.tw/), copy the desired mods, and paste them into the program.
-    * *Tip: You can mix number mods and text mods.*
+    * Type or paste your desired mods into the text box.
+    * *See the "Input Rules" section below for the best results.*
 
 2.  **Set Coordinates:**
-    * Click **`1. Set Chaos`** -> Hover your mouse over the Chaos Orb stack in-game (**Wait 2 seconds**).
+    * Click **`1. Set Chaos/Alt`** -> Hover your mouse over the Currency stack (Chaos Orb, Orb of Alteration, etc.) in-game (**Wait 2 seconds**).
     * Click **`2. Set Item`** -> Hover your mouse over the item you want to craft (**Wait 2 seconds**).
 
 3.  **Start Crafting:**
@@ -36,11 +36,13 @@ A Chaos Spam crafting tool designed for **Path of Exile 2**, built with Python. 
 4.  **Stopping:**
     * Press the **`X`** key on your keyboard to stop immediately.
 
-### Input Example
+## 📝 Input Rules & Examples (Crucial for v1.31)
 
-You can paste data like this directly into the program (Supports both numbers and text):
+Thanks to the new auto-cleaner, you need to structure your inputs based on what you want to achieve:
 
+**🎯 Goal 1: I want a specific Minimum Value (Recommended)**
+Do not include `(x-y)` ranges. Just type the minimum number you accept + the text.
 ```text
-Adds (20–30) to (40–50) Physical Damage
-(170–179)% increased Physical Damage
-Upgrades Radius to Large
+47 to Spirit
+92% increased Energy Shield
+allow rerolling Favours 3

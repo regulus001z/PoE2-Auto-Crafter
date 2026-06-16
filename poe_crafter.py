@@ -7,8 +7,8 @@ import re
 import keyboard
 
 # --- VERSION CONTROL ---
-APP_VERSION = "v1.30 (FIXED)"
-APP_TITLE = f"PoE 2 Auto Crafter {APP_VERSION}"
+APP_VERSION = "v1.31 (REGEX FIXED)"
+APP_TITLE = f"PoE 2 Auto Crafter By Yuki {APP_VERSION}"
 
 # Theme Setup
 ctk.set_appearance_mode("Dark")
@@ -28,11 +28,11 @@ class PoEBotText(ctk.CTk):
         self.item_pos = None
         self.is_running = False
 
-        # --- UI LAYOUT (คงเดิม) ---
+        # --- UI LAYOUT ---
         self.frame_header = ctk.CTkFrame(self, fg_color="transparent")
         self.frame_header.pack(pady=(20, 10))
         
-        self.lbl_title = ctk.CTkLabel(self.frame_header, text="RNG Chaos Roll by Yuki", font=("Roboto", 28, "bold"))
+        self.lbl_title = ctk.CTkLabel(self.frame_header, text="PoE Auto Crafter", font=("Roboto", 28, "bold"))
         self.lbl_title.pack()
         
         self.lbl_subtitle = ctk.CTkLabel(self.frame_header, text="Press 'X' to STOP", text_color="orange", font=("Arial", 14))
@@ -43,7 +43,7 @@ class PoEBotText(ctk.CTk):
         self.frame_coords.pack(pady=10, padx=20, fill="x")
         self.frame_coords.grid_columnconfigure((0, 1), weight=1)
 
-        self.btn_set_chaos = ctk.CTkButton(self.frame_coords, text="1. Set Chaos", command=self.set_chaos_action, 
+        self.btn_set_chaos = ctk.CTkButton(self.frame_coords, text="1. Set Chaos/Alt", command=self.set_chaos_action, 
                                          font=("Arial", 14, "bold"), height=40, fg_color="#D4AF37", hover_color="#B8860B", text_color="black")
         self.btn_set_chaos.grid(row=0, column=0, padx=10, pady=(15, 5), sticky="ew")
         
@@ -103,13 +103,16 @@ class PoEBotText(ctk.CTk):
     def parse_user_requirements(self, user_text):
         requirements = []
         clean_text = user_text.replace('–', '-').replace('—', '-')
+        
+        # 🌟 [เพิ่มบรรทัดนี้] สั่งให้ลบวงเล็บ (...) ออกจากข้อความที่คุณก๊อปแปะมาด้วย!
+        clean_text = re.sub(r'\([^)]*\)', '', clean_text)
+        
         lines = clean_text.strip().split('\n')
         
         for line in lines:
             line = line.strip()
             if not line: continue
 
- 
             if not re.search(r'\d', line):
                 regex = re.escape(line).replace(r'\ ', r'\s+')
                 requirements.append({"pattern": regex, "min_values": [], "original_text": line, "type": "text"})
@@ -127,14 +130,21 @@ class PoEBotText(ctk.CTk):
         return requirements
 
     def check_item_match(self, item_data, requirements):
-
         clean_data = item_data.lower()
 
+        # 1. แปลงขีดแปลกๆ ของเกม ให้เป็นขีดคีย์บอร์ดปกติก่อน
+        clean_data = clean_data.replace('–', '-').replace('—', '-')
+
+        # 2. ทำความสะอาดข้อความจากเกม
         clean_data = re.sub(r'.*\(fractured\).*', '', clean_data)
-
-
         clean_data = re.sub(r'.*\(implicit\).*', '', clean_data)
-
+        
+        # 3. ตัดวงเล็บปีกกา เช่น { Suffix Modifier ... }
+        clean_data = re.sub(r'\{.*?\}', '', clean_data)
+        
+        # 4. ตัดวงเล็บกลม (...) ทุกชนิดทิ้งทั้งหมด!
+        clean_data = re.sub(r'\([^)]*\)', '', clean_data)
+        
         clean_data = clean_data.replace(',', '')
 
         print(f"--- BOT SEES (Cleaned) ---\n{clean_data}\n--------------------------")
@@ -143,12 +153,9 @@ class PoEBotText(ctk.CTk):
             matches = re.finditer(req["pattern"], clean_data, re.IGNORECASE)
             
             for match in matches:
-
                 if req.get("type") == "text":
                     print(f"🎉 MATCH FOUND (Text)! {req['original_text']}")
                     return True
-                
-
                 else:
                     game_values = [int(v) for v in match.groups()]
                     if len(game_values) == len(req["min_values"]):
@@ -173,7 +180,7 @@ class PoEBotText(ctk.CTk):
         self.is_running = True
         self.btn_start.configure(state="disabled")
         self.btn_stop.configure(state="normal")
-        self.lbl_log.configure(text="Running... (v1.29 Rhythm)", text_color="cyan")
+        self.lbl_log.configure(text=f"Running... ({APP_VERSION})", text_color="cyan")
         
         threading.Thread(target=self.run_process).start()
 
@@ -184,7 +191,6 @@ class PoEBotText(ctk.CTk):
         self.btn_start.configure(state="normal")
         self.btn_stop.configure(state="disabled")
         
-        # ปล่อย Shift แบบเดิม
         keyboard.release('shift')
 
     def force_stop(self):
@@ -202,7 +208,7 @@ class PoEBotText(ctk.CTk):
         pyautogui.moveTo(self.item_pos)
         time.sleep(0.2)
 
-        self.lbl_log.configure(text=">>> ROLLING (v1.29) <<<", text_color="#00FF00")
+        self.lbl_log.configure(text=">>> ROLLING <<<", text_color="#00FF00")
 
         keyboard.press('shift')
         time.sleep(0.2) 
@@ -211,8 +217,6 @@ class PoEBotText(ctk.CTk):
             if keyboard.is_pressed('x'): self.stop_bot(); break
 
             pyautogui.click()
-            
-
             time.sleep(0.06)
 
             if keyboard.is_pressed('x'): self.stop_bot(); break
@@ -238,7 +242,6 @@ class PoEBotText(ctk.CTk):
                 self.stop_bot()
                 break
             
-            # Loop delay (พักนิดเดียว)
             time.sleep(0.02)
 
     def on_close(self):
